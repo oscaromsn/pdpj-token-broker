@@ -15,7 +15,8 @@
     "keys": "node scripts/mint-api-key.ts",
     "e2e": "bun scripts/e2e.ts",
     "renew-session": "bun scripts/renew-session.ts",
-    "probe-token": "bun scripts/probe-token.ts"
+    "probe-token": "bun scripts/probe-token.ts",
+    "sweep-apis": "bun scripts/sweep-apis.ts"
   },
   "dependencies": {
     "@effect/platform-bun": "4.0.0-rc.109",
