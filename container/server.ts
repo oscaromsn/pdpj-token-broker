@@ -11,6 +11,7 @@ import { createServer } from "node:http"
 import { chromium, type Browser } from "playwright-core"
 import { login } from "../src/adapters/browser/PlaywrightLogin.ts"
 import { BrowserLoginRequest, type BrowserLoginReply } from "../src/adapters/browser/Protocol.ts"
+import { BrowserQueryRequest } from "../src/query/BrowserQueryProtocol.ts"
 
 /**
  * The browser fallback service.
@@ -31,6 +32,7 @@ import { BrowserLoginRequest, type BrowserLoginReply } from "../src/adapters/bro
  */
 
 const decodeRequest = Schema.decodeUnknownEffect(BrowserLoginRequest)
+const decodeQuery = Schema.decodeUnknownEffect(BrowserQueryRequest)
 
 /**
  * Concurrent logins allowed at once.
@@ -142,6 +144,69 @@ const RoutesLayer = HttpRouter.use((router) =>
     )
 
     yield* router.add("POST", "/login", handleLogin)
+
+    /**
+     * Run a PDPJ process query from inside a real browser page.
+     *
+     * The whole reason this endpoint exists: the process API sits behind a WAF
+     * that fingerprints the TLS handshake, so a plain server request is
+     * blocked while a fetch from a genuine Chromium page is not. The page
+     * issues the fetch with the caller's Bearer token; the container never
+     * interprets the result, only relays status + body for the Worker to
+     * classify.
+     */
+    const handleQuery = Effect.gen(function*() {
+      const request = yield* HttpServerRequest.HttpServerRequest
+      const presented = bearerFrom(request.headers["authorization"])
+      if (presented === undefined || !tokenMatches(presented, Redacted.value(authToken))) {
+        return HttpServerResponse.text("unauthorized", { status: 401 })
+      }
+
+      const body = yield* request.json.pipe(Effect.mapError(() => "unreadable body" as const))
+      const payload = yield* decodeQuery(body).pipe(Effect.mapError(() => "malformed body" as const))
+
+      const result = yield* Effect.tryPromise(async () => {
+        const context = await browser.newContext({ ignoreHTTPSErrors: false })
+        try {
+          const page = await context.newPage()
+          // The fetch runs in the page context, so it carries the browser's
+          // TLS fingerprint and a same-origin request shape — which is what
+          // clears the WAF. `page.request` would not; it must be `fetch`
+          // evaluated inside the page.
+          return await page.evaluate(
+            async ({ url, accessToken }) => {
+              const r = await fetch(url, {
+                headers: { authorization: "Bearer " + accessToken, accept: "application/json" }
+              })
+              return { status: r.status, body: (await r.text()).slice(0, 200000) }
+            },
+            { url: payload.url, accessToken: payload.accessToken }
+          )
+        } finally {
+          await context.close()
+        }
+      }).pipe(
+        Semaphore.withPermits(semaphore, 1),
+        // A browser failure becomes a relayed non-result (status 0), which the
+        // Worker classifies as unavailable — it must not crash this handler.
+        Effect.catch((cause) => Effect.succeed({ status: 0, body: `browser query failed: ${String(cause)}` }))
+      )
+
+      return yield* HttpServerResponse.json(result).pipe(Effect.orDie)
+    }).pipe(
+      Effect.catch((reason: string) =>
+        HttpServerResponse.json({ status: 400, body: reason }, { status: 400 }).pipe(Effect.orDie)
+      ),
+      Effect.catchDefect((defect) =>
+        Effect.logError("browser query defect", { defect }).pipe(
+          Effect.andThen(
+            HttpServerResponse.json({ status: 500, body: "internal browser error" }, { status: 500 }).pipe(Effect.orDie)
+          )
+        )
+      )
+    )
+
+    yield* router.add("POST", "/query", handleQuery)
 
     // Liveness only — unauthenticated so an orchestrator can reach it, and
     // free of any detail about the service.

@@ -379,6 +379,46 @@ mismatched client fails at the first login rather than at build time.
 `container/README.md` covers the operational detail — why `tini`, why
 `--ipc=host`, why non-root, and where to host it.
 
+## Querying processes (the WAF-proof path)
+
+Minting a token is only half the job — you still have to *query* with it, and
+that turned out to have its own wrinkle. `portaldeservicos.pdpj.jus.br/api/v2`
+sits behind a WAF that rejects requests which don't look like the portal's own
+SPA. Browser-shaped headers get a plain HTTP client most of the way, but the
+gateway also fingerprints the TLS handshake, which no header can fake — proven
+live, where the identical query returned data from inside a real browser and a
+gateway `403 <html>` from a plain client.
+
+So `ProcessQuery` is a port with two transports and a cascade, mirroring the
+login side:
+
+- **`HttpProcessQuery`** — plain HTTP with browser headers. Cheap, and enough
+  until the WAF fingerprints the handshake.
+- **`BrowserProcessQuery`** — runs the fetch *inside* the browser container's
+  Chromium (a new `POST /query` endpoint), so it carries a real browser's TLS
+  fingerprint. Slow, heavy, WAF-proof.
+- **`ProcessQueryCascade`** — HTTP first, escalating to the browser **only** on
+  a gateway block. It deliberately does *not* escalate a `NoStanding` refusal
+  (a browser would be refused identically) or a rejected token (no transport
+  fixes that) — the same escalate-only-on-a-fixable-signal discipline the login
+  cascade uses.
+
+The result is a tagged union, because the failures look alike over the wire but
+mean different things:
+
+| Result | Meaning |
+| --- | --- |
+| `Found` | The process JSON |
+| `NoStanding` | Valid token, but no standing in this case — `"não possui acesso"`. A sealed process the account is not party to. |
+| `NotFound` | No such process for this account |
+| `ProcessQueryBlocked` | The WAF blocked the request — retry via browser |
+| `ProcessTokenRejected` | The token itself is bad — re-authenticate |
+
+The `NoStanding` / `ProcessTokenRejected` split is the one the live run forced:
+PDPJ refuses a sealed process with `"não possui acesso"` as a **401** for a
+single process (and 403 for a filtered list), so the verdict is read from the
+message, not the status — otherwise a no-standing refusal reads as a bad token.
+
 ## What is verified, and what is not
 
 The suite runs with no network and no cloud account, and covers the domain, the
@@ -387,6 +427,12 @@ the last against real SQLite, which is the same engine D1 runs.
 
 Three things are **not** covered and need a live run before you trust them:
 
+1. **The browser-context query** (`container/server.ts` `POST /query`,
+   `BrowserProcessQuery`). The classification and the cascade are unit-tested,
+   and the plain-HTTP query was proven live (it returned the account's real
+   processes). What is unrun is the *container* query path end to end — the
+   `page.evaluate(fetch)` inside a deployed Chromium — which needs a built
+   container and a fresh token.
 1. **The browser interaction in `adapters/browser/PlaywrightLogin.ts`.** The
    container around it *is* exercised: the bundle builds, loads, resolves its
    config and reaches `chromium.launch()` — which is how the CommonJS-`require`
