@@ -11,7 +11,8 @@
     "deploy": "alchemy deploy",
     "dev": "alchemy dev",
     "destroy": "alchemy destroy",
-    "test:live": "PJE_ENABLE_LIVE_TESTS=1 vitest run test/sso/Live.test.ts"
+    "test:live": "PJE_ENABLE_LIVE_TESTS=1 vitest run test/sso/Live.test.ts",
+    "keys": "node scripts/mint-api-key.ts"
   },
   "dependencies": {
     "@effect/platform-bun": "4.0.0-rc.109",

@@ -1,5 +1,5 @@
 {
-  "include": ["src/**/*.ts", "test/**/*.ts", "container/**/*.ts", "alchemy.run.ts"],
+  "include": ["src/**/*.ts", "test/**/*.ts", "container/**/*.ts", "scripts/**/*.ts", "alchemy.run.ts"],
   "compilerOptions": {
     "strict": true,
     "exactOptionalPropertyTypes": true,

@@ -135,6 +135,46 @@ export BROWSER_SERVICE_TOKEN=...
 These are read by `Config.redacted` / `Config.string` during the Worker's init
 phase, which is what makes Alchemy bind them as `secret_text` automatically.
 
+### Provisioning tenant API keys
+
+Every endpoint is behind a bearer key, and **nothing in the deployed service
+writes the `api_keys` table** — deliberately. An endpoint that mints
+credentials for arbitrary tenants would be the most dangerous surface here, and
+it would need its own bootstrap credential to protect, which is the same
+problem one rung up. Keys are provisioned from outside the network instead:
+
+```bash
+# against the deployed D1 database
+CLOUDFLARE_API_TOKEN=... bun run keys mint \
+  --tenant acme --label "CI pipeline" \
+  --account <cf-account-id> --database <d1-database-id>
+
+bun run keys list   [--tenant acme] ...
+bun run keys revoke --hash <key-hash> ...
+```
+
+The key is printed to stdout exactly once and never stored — only its SHA-256
+hash reaches the database, so a dump yields nothing usable. Everything else
+goes to stderr, so it can be piped somewhere safe:
+
+```bash
+bun run keys mint --tenant acme --label CI ... > key.txt
+```
+
+Revocation is by hash, not by plaintext: an operator revoking a key usually
+does not have it — that is often *why*. Hashes are listed by `keys list`, and
+revoked rows are kept rather than deleted so the audit trail still points at
+something real.
+
+For local development, point it at a SQLite file instead:
+
+```bash
+bun run keys mint --tenant acme --label dev --sqlite ./dev.db
+```
+
+`--sqlite` requires Node (`bun run keys` already routes through it); Bun has no
+`node:sqlite`. Remote mode runs under either.
+
 ### Stages
 
 Every deploy targets one stage, and stages never share state or physical
