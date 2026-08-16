@@ -1,0 +1,54 @@
+# Browser fallback service — portable deploy.
+#
+# Run from the repo root, because the image builds from there (the server
+# imports src/):
+#
+#   docker compose -f container/docker-compose.yml up --build -d
+#
+# Set BROWSER_SERVICE_TOKEN first — the service refuses every request without
+# it. A .env next to this file is picked up automatically (see .env.example).
+
+services:
+  browser:
+    build:
+      # The build context is the repo root; the Dockerfile lives here.
+      context: ..
+      dockerfile: container/Dockerfile
+    image: pdpj-browser:latest
+    restart: unless-stopped
+
+    environment:
+      PORT: "8080"
+      # Read from the shell env or the sibling .env — never hard-coded here.
+      BROWSER_SERVICE_TOKEN: ${BROWSER_SERVICE_TOKEN:?set BROWSER_SERVICE_TOKEN}
+
+    # Chromium is memory-hungry and leaves zombies; these are not optional for
+    # a browser workload.
+    init: true                 # reap defunct Chromium children (belt to the image's tini)
+    shm_size: "1gb"            # Chromium shares /dev/shm; the 64 MB default crashes it
+    mem_limit: "2g"
+    cpus: "2.0"
+
+    # Publish the port only on loopback by default: the service sits inside the
+    # vault's trust boundary and must not face the internet. Front it with TLS
+    # (a reverse proxy) and reach it privately, or replace with a private
+    # network. The shared token is authentication, not exposure control.
+    ports:
+      - "127.0.0.1:8080:8080"
+
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8080/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      start_period: 20s
+      retries: 3
+
+    # Small hardening: Chromium runs --no-sandbox (the container is the
+    # boundary), so drop what it does not need and forbid new privileges.
+    security_opt:
+      - no-new-privileges:true
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
