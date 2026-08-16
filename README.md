@@ -155,13 +155,18 @@ bunx alchemy destroy --stage pr-42
 `plan` currently reports **3 to create** — the Worker, the D1 database, and the
 KV namespace.
 
-Deploys need the values in `.env.example` present in the environment:
+Only `VAULT_MASTER_KEY` is required to deploy:
 
 ```bash
 export VAULT_MASTER_KEY=...          # >= 32 chars
-export BROWSER_SERVICE_URL=...
-export BROWSER_SERVICE_TOKEN=...
 ```
+
+`BROWSER_SERVICE_URL` and `BROWSER_SERVICE_TOKEN` are optional, so the broker
+deploys standalone before the browser container exists. Until they are set, a
+`ChallengeRequired` fails as `SsoUnavailable` — correct, since there is
+genuinely no browser to escalate to.
+
+Deploy prints `accountId` and `databaseId`, which is what the key tool needs.
 
 These are read by `Config.redacted` / `Config.string` during the Worker's init
 phase, which is what makes Alchemy bind them as `secret_text` automatically.

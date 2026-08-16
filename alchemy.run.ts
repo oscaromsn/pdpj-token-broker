@@ -41,6 +41,11 @@ export default Alchemy.Stack(
     return {
       url: broker.url.as<string>(),
       databaseName: db.databaseName,
+      // Printed so the first API key can be minted straight after deploying:
+      //   bun run keys mint --tenant <t> --label <l> \
+      //     --account <accountId> --database <databaseId>
+      databaseId: db.databaseId,
+      accountId: db.accountId,
       cacheTitle: cache.title
     }
   })

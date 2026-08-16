@@ -1,6 +1,6 @@
 import type { RuntimeContext } from "alchemy"
 import * as Cloudflare from "alchemy/Cloudflare"
-import { Config, Effect, Layer } from "effect"
+import { Config, Effect, Layer, Redacted } from "effect"
 import { HttpRouter, HttpServer } from "effect/unstable/http"
 import { HttpApiBuilder } from "effect/unstable/httpapi"
 import {
@@ -67,8 +67,16 @@ export default class Broker extends Cloudflare.Worker<Broker>()(
     // Evaluated here in init, so Alchemy binds each onto the Worker's
     // environment as a secret at deploy time.
     const masterKey = yield* Config.redacted("VAULT_MASTER_KEY")
-    const browserUrl = yield* Config.string("BROWSER_SERVICE_URL")
-    const browserToken = yield* Config.redacted("BROWSER_SERVICE_TOKEN")
+    // Defaulted, so the broker deploys standalone before the browser
+    // container exists. The fallback is only reached on `ChallengeRequired`;
+    // until one is configured, that path fails as `SsoUnavailable` — which is
+    // exactly right, since there is genuinely no browser to escalate to.
+    const browserUrl = yield* Config.string("BROWSER_SERVICE_URL").pipe(
+      Config.withDefault("http://browser-service-not-configured.invalid")
+    )
+    const browserToken = yield* Config.redacted("BROWSER_SERVICE_TOKEN").pipe(
+      Config.withDefault(Redacted.make("not-configured"))
+    )
 
     /**
      * Build the whole adapter graph and the request handler.
