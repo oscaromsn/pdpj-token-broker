@@ -97,6 +97,37 @@ Only the success path exists. There is deliberately no live "wrong password"
 test — deliberately failing logins against a real account is exactly what the
 circuit breaker exists to prevent.
 
+### End-to-end check against the real PDPJ
+
+`scripts/e2e.ts` walks the whole chain and reports at each step. It has two
+modes, because the two things that can be wrong fail very differently and
+conflating them wastes an afternoon:
+
+```bash
+# 1. Is this credential usable at all? No deploy, no database, no API key.
+PDPJ_CPF=... PDPJ_PASSWORD=... PDPJ_TOTP_SEED=... \
+  bun run e2e --direct
+
+# 2. Does the deployed service work? Only worth running once (1) passes.
+PDPJ_CPF=... PDPJ_PASSWORD=... PDPJ_TOTP_SEED=... \
+  bun run e2e --broker https://broker.example.workers.dev --key pdpj_...
+```
+
+Both end by querying PDPJ for a real process (`--processo`, defaulting to the
+case this project was built to reach), because minting a well-formed JWT proves
+nothing about whether PDPJ will honour it.
+
+It performs a **real login against a real account**: one attempt, never
+retried. Malformed input is rejected before anything touches the network, so a
+typo can never cost lockout budget. Each failure names the likely cause —
+a refused password is called out as terminal and *not* to be retried, a 429 as
+an open breaker, a 403 as valid-credential-without-standing.
+
+That last distinction is the one to expect on a sealed process. A token proves
+who you are, not that you have standing in a particular case: unless the
+account is a party or counsel of record, PDPJ will refuse it no matter how
+healthy the broker is.
+
 ## Deploying
 
 Alchemy is Infrastructure-as-Effects: `src/worker.ts` *is* the deployment
