@@ -13,7 +13,9 @@
     "destroy": "alchemy destroy",
     "test:live": "PJE_ENABLE_LIVE_TESTS=1 vitest run test/sso/Live.test.ts",
     "keys": "node scripts/mint-api-key.ts",
-    "e2e": "bun scripts/e2e.ts"
+    "e2e": "bun scripts/e2e.ts",
+    "renew-session": "bun scripts/renew-session.ts",
+    "probe-token": "bun scripts/probe-token.ts"
   },
   "dependencies": {
     "@effect/platform-bun": "4.0.0-rc.109",

@@ -7,6 +7,7 @@ import {
   SsoUnavailable
 } from "../../domain/Errors.ts"
 import { type Credential, TokenSet } from "../../domain/Model.ts"
+import { exchange as exchangeToken } from "./tokenExchange.ts"
 import { SsoClient } from "../../ports/SsoClient.ts"
 import { TotpGenerator } from "../../ports/TotpGenerator.ts"
 
@@ -17,13 +18,6 @@ export class SsoConfig extends Context.Service<SsoConfig, {
   readonly clientId: string
   readonly redirectUri: string
 }>()("broker/adapters/sso/SsoConfig") {}
-
-/** Keycloak's token response. Only the fields we actually rely on. */
-const TokenResponse = Schema.Struct({
-  access_token: Schema.String,
-  refresh_token: Schema.optional(Schema.String),
-  expires_in: Schema.Number
-})
 
 /**
  * Markers that identify each page in the login flow.
@@ -126,38 +120,10 @@ export class KeycloakSso {
       const codeFrom = (location: string): string | undefined =>
         /[#&?]code=([^&]+)/.exec(location)?.[1]
 
-      const exchange = Effect.fn("KeycloakSso.exchange")(
-        function*(client: HttpClient.HttpClient, form: Record<string, string>) {
-          const response = yield* client.execute(
-            HttpClientRequest.post(`${config.realmUrl}/token`).pipe(
-              HttpClientRequest.bodyUrlParams(form)
-            )
-          ).pipe(Effect.mapError(unavailable("token endpoint unreachable")))
-
-          if (response.status !== 200) {
-            const body = yield* bodyOf(response)
-            return yield* new SsoUnavailable({
-              detail: `token endpoint returned ${response.status}: ${body.slice(0, 200)}`
-            })
-          }
-
-          const payload = yield* HttpClientResponse.schemaBodyJson(TokenResponse)(response).pipe(
-            Effect.mapError(unavailable("token response was not the expected shape"))
-          )
-
-          const now = yield* Effect.clockWith((clock) => clock.currentTimeMillis)
-
-          return new TokenSet({
-            accessToken: Redacted.make(payload.access_token),
-            ...(payload.refresh_token === undefined
-              ? {}
-              : { refreshToken: Redacted.make(payload.refresh_token) }),
-            // Absolute, not relative: a duration is only meaningful next to
-            // the instant it was issued.
-            expiresAt: now + payload.expires_in * 1000
-          })
-        }
-      )
+      // The token-endpoint call is shared with the session adapter; only the
+      // grant-specific form fields differ per call site.
+      const exchange = (client: HttpClient.HttpClient, form: Record<string, string>) =>
+        exchangeToken(client, config.realmUrl, form)
 
       const login = Effect.fn("KeycloakSso.login")(function*(credential: Credential) {
         const client = yield* isolatedClient

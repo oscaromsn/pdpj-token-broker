@@ -171,6 +171,39 @@ Deploy prints `accountId` and `databaseId`, which is what the key tool needs.
 These are read by `Config.redacted` / `Config.string` during the Worker's init
 phase, which is what makes Alchemy bind them as `secret_text` automatically.
 
+### gov.br accounts (session capture)
+
+Most advogados authenticate through **gov.br**, not a local PJe password — the
+identity lives at gov.br, behind its own SSO and 2FA, and cannot be logged in
+headlessly. For these accounts the `KeycloakSso` (password + TOTP) adapter does
+not apply. Use `SessionSso` instead.
+
+The idea: log in **once**, interactively, in a browser; capture the resulting
+**refresh token**; and let the broker keep it alive by refresh from then on. A
+gov.br session mints tokens that carry a refresh token, and refreshing renews
+access silently — no second gov.br login — until the session reaches its max
+lifetime.
+
+`SessionSso` stores that refresh token in a `SessionStore` (separate from the
+password vault and the token cache, since it is a different kind of secret) and
+rotates it on every use: Keycloak issues a new refresh token each time and
+retires the old, so the new one is persisted before the call returns.
+
+Capture and verify it with:
+
+```bash
+# refresh_token copied from the token response in DevTools (see the script header)
+PDPJ_REFRESH_TOKEN="eyJ..." bun run renew-session
+```
+
+That runs the exact refresh grant the adapter performs, queries PDPJ with the
+fresh token to prove it is real, and prints the rotated refresh token to store.
+Run it again with that value and it walks the session forward one rotation —
+which is what the broker does in production.
+
+For a token you have already captured (the access token alone, no refresh),
+`bun run probe-token` reports whether PDPJ honours it and what it can see.
+
 ### Provisioning tenant API keys
 
 Every endpoint is behind a bearer key, and **nothing in the deployed service
