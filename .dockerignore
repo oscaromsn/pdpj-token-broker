@@ -1,0 +1,10 @@
+node_modules
+.alchemy
+.git
+dist
+test
+migrations
+*.md
+.env
+.env.*
+!.env.example

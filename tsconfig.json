@@ -1,0 +1,19 @@
+{
+  "include": ["src/**/*.ts", "test/**/*.ts", "container/**/*.ts", "alchemy.run.ts"],
+  "compilerOptions": {
+    "strict": true,
+    "exactOptionalPropertyTypes": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "module": "Preserve",
+    "moduleResolution": "Bundler",
+    "target": "ESNext",
+    "lib": ["ESNext", "DOM"],
+    "types": ["@cloudflare/workers-types", "node"],
+    "verbatimModuleSyntax": true,
+    "allowImportingTsExtensions": true,
+    "isolatedModules": true
+  }
+}

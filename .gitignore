@@ -1,0 +1,7 @@
+node_modules/
+# Alchemy's local state store — per-developer, never shared.
+# Switch to Cloudflare.state() before deploying from CI.
+.alchemy/
+.env
+.env.*
+!.env.example

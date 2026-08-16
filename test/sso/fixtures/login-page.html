@@ -1,0 +1,189 @@
+    <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+            "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+    <html xmlns="http://www.w3.org/1999/xhtml" class="">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="robots" content="noindex, nofollow">
+        <link rel="apple-touch-icon" sizes="180x180" href="/auth/resources/s5f0o/common/keycloak/img/i180.png">
+        <link rel="icon" type="image/png" sizes="32x32" href="/auth/resources/s5f0o/common/keycloak/img/i32.png">
+        <link rel="icon" type="image/png" sizes="16x16" href="/auth/resources/s5f0o/common/keycloak/img/i16.png">
+        <title>JUSBR - Justiça em um só lugar</title>
+        <link rel="icon" href="/auth/resources/s5f0o/login/pdpj-jusbr/img/favicon.ico"/>
+                <link href="/auth/resources/s5f0o/login/pdpj-jusbr/css/styles.css" rel="stylesheet"/>
+                <link href="/auth/resources/s5f0o/login/pdpj-jusbr/css/bootstrap.min.css" rel="stylesheet"/>
+                <link href="/auth/resources/s5f0o/login/pdpj-jusbr/css/custom.css" rel="stylesheet"/>
+                <link href="/auth/resources/s5f0o/login/pdpj-jusbr/css/uikit.css" rel="stylesheet"/>
+                <script src="/auth/resources/s5f0o/login/pdpj-jusbr/js/pjeOffice.js" type="text/javascript"></script>
+    </head>
+    <body class="kc-body">
+    <uikit-header _ngcontent-ikx-c1="" _nghost-ikx-c9="">
+        <mat-toolbar _ngcontent-ikx-c9="" class="mat-toolbar mat-toolbar-single-row">
+            <span _ngcontent-ikx-c9="" class="logotipo">
+               <a _ngcontent-ikx-c9="" href="#" tabindex="1">
+                  <div _ngcontent-ikx-c9="" class="logomobile is-mobile"></div>
+                  <div _ngcontent-ikx-c9="" class="logodesk is-desktop"></div>
+               </a>
+            </span>
+            <span _ngcontent-ikx-c9="" class="header-nav">
+               <uikit-accessibility _ngcontent-ikx-c9="" _nghost-ikx-c20="">
+                  <mat-menu _ngcontent-ikx-c20="" class="ng-tns-c22-0">
+                  </mat-menu>
+                  <button _ngcontent-ikx-c20="" aria-haspopup="true" aria-label="Acessibilidade"
+                          class="mat-focus-indicator mat-menu-trigger mat-tooltip-trigger mat-icon-button mat-button-base mat-primary"
+                          color="primary" mat-icon-button="" mattooltip="Acessibilidade" tabindex="5">
+                     <span class="mat-button-wrapper">
+                        <mat-icon _ngcontent-ikx-c20=""
+                                  class="fa-2x fas fa-universal-access acessibility mat-icon notranslate material-icons mat-icon-no-color"
+                                  role="img" aria-hidden="true" data-mat-icon-type="font"></mat-icon>
+                     </span>
+                     <span class="mat-button-ripple mat-ripple mat-button-ripple-round" matripple=""></span><span
+                              class="mat-button-focus-overlay"></span>
+                  </button>
+               </uikit-accessibility>
+            </span>
+        </mat-toolbar>
+    </uikit-header>
+    <div class="kc-login">
+        <div id="kc-main" class="row">
+            <div class="kc-banner col-md-8">
+                    <img src="/auth/resources/s5f0o/login/pdpj-jusbr/img/banner.png" class="img-fluid middle"/>
+            </div>
+            <div class="kc-form-card  col-md-4 ">
+                <header class="kc-form-header text-center">
+                    <h2>Você está se autenticando em Portal de Serviços do Poder Judiciário</h2>
+                </header>
+                <div id="kc-content">
+                    <div id="kc-content-wrapper">
+<div id="kc-form" class="">
+      <div id="kc-form-wrapper" class=" ">
+                     <script type="text/javascript">
+                        function isUserName(obj) {
+                           if (obj.search(/[^a-zA-Z].[^a-zA-Z]+/) === -1) {
+                              return true;
+                           } else {
+                              return false;
+                           }
+
+                        }
+
+                        function onSubmit() {
+                           var usernameField = document.getElementById("username");
+                           if (isUserName(usernameField.value)) {
+
+                              var username = usernameField.value.replaceAll("/", "").replaceAll("-", "").replaceAll(".", "");
+                              if (username.length > 11) {
+                                    usernameField.value = username.substring(0, 14);
+                              } else {
+                                    usernameField.value = username.substring(0, 11);
+                              }
+                           }
+                        //    login.disabled = true;
+                           return true;
+                        }
+                     </script>
+                     <form id="kc-form-login" onsubmit="login.disabled = true; return true;" action="https://sso.cloud.pje.jus.br/auth/realms/pje/login-actions/authenticate?session_code=oxgKta2TWvWyksvUuX-oljEeFNgbUlzZvZI_k6_Lak4&amp;execution=a859731d-33b4-4090-8b71-c6187fbbf04c&amp;client_id=portalexterno-frontend&amp;tab_id=5yPxIneAl2c" method="post">
+                        <div class="container">
+                           <div class="row">
+                              <div class="form-wrapper">
+                                    <div class="mat-input-element">
+                                       <span class="mat-form-field-label-wrapper">
+                                          <label class="mat-form-field-label" id="username-label" for="username" aria-owns="mat-input-1">
+                                          CPF/CNPJ
+                                          </label>
+                                       </span>
+                                       <input tabindex="1" id="username" class="form-control" name="username" placeholder="000.000.000-00" type="text" autofocus="" autocomplete="off">
+                                    </div>
+                                 <div class="mat-input-element">
+                                    <span class="mat-form-field-label-wrapper">
+                                    <label class="mat-form-field-label" id="password-label" for="password" aria-owns="mat-input-1">
+                                    Senha
+                                    </label>
+                                    </span>
+                                    <input tabindex="2" id="password" class="form-control" name="password" placeholder="Digite sua senha" type="password" autocomplete="off">
+                                 </div>
+                                 <div class=" ">
+                                    <div id="kc-form-options">
+                                    </div>
+                                 </div>
+                                 <div id="kc-form-buttons" class="">
+                                    <input type="hidden" id="id-hidden-input" name="credentialId" />
+                                    <input tabindex="4" class="btn btn-primary btn-block  text-uppercase" name="login" id="kc-login" type="submit" value="Entrar"/>
+                                    <input type="hidden" id="pjeoffice-code" name="pjeoffice-code" value="">
+                                    <input type="hidden" id="phrase" name="phrase" value="">
+                                 </div>
+                                 <div id="outrasopcoes">
+                                    Outras opções de acesso
+                                 </div>
+                                 <div  class=" ">
+                                    <a href="/auth/realms/pje/broker/acessogovbr/login?client_id=portalexterno-frontend&amp;tab_id=5yPxIneAl2c&amp;session_code=oxgKta2TWvWyksvUuX-oljEeFNgbUlzZvZI_k6_Lak4" class="br-sign-in block">Entrar com&nbsp;<img src="https://www.gov.br/++theme++padrao_govbr/img/govbr-colorido-b.png" alt="gov.br"></a>
+                                 </div>
+                                 <div class="certificado">
+                                    <a href="#" onclick="autenticar('Y8fHLWlTEgLBexS0Bjn4PAZ5xxq+Nerd4aL9DdmlzdouGeQkC8ilZonyqLCip+2AHyXWV0axUz2l1SZ80p0V9xQvOrr2l9tWww9OdUuJm+3FTbfJx3cAiILseaQS03KG5zSd1AO2lvVJ4OhckXP48LW19diSZQbOMRRYbcXKD2/7bmadLlH7B585f39Chceye4eKRqmgECCgBClQoxl0Wy0UBitHfHATtgH2EbUIcD02xm9r/OzDXGfZibugKd0WubdKnvDeEZZlKicgQdUoASHyKpFA2xcs6FYG2Pbew8M5DXVfsbf/5p77GPStlCCFRhTS8TLNeE2dNkRnCpW8lQ==', '0.4062061520002034');">
+                                       <span class="botao-certificado-icon">
+                                          <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" aria-hidden="true" role="img" id="footer-sample-full" width="1em" height="1em" preserveAspectRatio="xMidYMid meet" viewBox="0 0 16 16" class="iconify iconify--bi">
+                                             <path fill="currentColor" d="M6 .5a.5.5 0 0 1 .5-.5h4a.5.5 0 0 1 .5.5v4H6v-4ZM7 1v1h1V1H7Zm2 0v1h1V1H9ZM5.5 5a.5.5 0 0 0-.5.5V15a1 1 0 0 0 1 1h5a1 1 0 0 0 1-1V5.5a.5.5 0 0 0-.5-.5h-6Z"></path>
+                                          </svg>
+                                       </span>
+                                       <span class="botao-certificado-titulo">Seu certificado digital</span>
+                                    </a>
+                                 </div>
+                              </div>
+                           </div>
+                        </div>
+                     </form>
+      </div>
+</div>
+
+                    </div>
+
+                        <div id="mensagem">
+                            <div id="kc-info" class="">
+                                <div id="kc-info-wrapper" class="">
+                                </div>
+                            </div>
+                        </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="footer-nota" class="col-md-12">
+        <span class="suporte">Precisa de ajuda? Entre em contato com o suporte no endere&ccedil;o eletr&ocirc;nico: <a
+                    target="_blank" href="https://suporteti.cnj.jus.br">https://suporteti.cnj.jus.br</a></span>
+        <span class="suporte">© <span id="current-year"></span> - Conselho Nacional de Justiça | Todos os direitos reservados </span>
+    </div>
+    <div id="tutorial-notification" class="tutorial-notification" style="display: block;">
+
+        <div class="tutorial-content row py-2 d-flex align-items-md-center align-items-start">
+
+            <div class="col-12 col-md-auto ml-md-auto ml-auto text-right order-1 order-md-last">
+                <a id="reject-tutorial" href="#" class="text-white close-icon"> x </a>
+            </div>
+
+            <div class="col-12 col-md-10 d-md-flex justify-content-md-center align-items-md-center order-2 order-md-first">
+
+                <div class="col-12 col-md-auto text-center px-md-2">
+                    <span class="material-icons">help_outline</span>
+                </div>
+
+                <div class="col-12 col-md-auto text-center text-md-center pr-md-3">
+                    Precisa de Ajuda ? Acesse aqui o tutorial do JUS.BR!
+                </div>
+
+                <div class="col-12 col-md-auto text-center mt-2 mt-md-0">
+                    <button id="accept-tutorial" class="btn btn-white btn-sm">
+                        Acessar tutorial
+                    </button>
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+    <link href="/auth/resources/s5f0o/login/pdpj-jusbr/css/tutorial.css" rel="stylesheet"/>
+
+    <script src="/auth/resources/s5f0o/login/pdpj-jusbr/js/tutorial.js" type="text/javascript"></script>
+    </body>
+    </html>
