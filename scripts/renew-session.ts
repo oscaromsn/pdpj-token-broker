@@ -1,6 +1,7 @@
 import { Effect, Redacted } from "effect"
 import { FetchHttpClient, HttpClient } from "effect/unstable/http"
 import { exchange } from "../src/adapters/sso/tokenExchange.ts"
+import { PDPJ_BROWSER_HEADERS } from "./pdpjHeaders.ts"
 
 /**
  * Seed and exercise a gov.br session for the broker.
@@ -89,7 +90,9 @@ const program = Effect.gen(function*() {
   const cpf = typeof c?.["preferred_username"] === "string" ? c["preferred_username"] : undefined
   const url = cpf === undefined ? PROCESSOS : `${PROCESSOS}?cpfCnpjParte=${cpf}`
   const response = yield* client.get(url, {
-    headers: { authorization: `Bearer ${access}` }
+    // The PDPJ gateway blocks non-browser requests; a bare Bearer alone gets a
+    // WAF 403. See pdpjHeaders.ts.
+    headers: { ...PDPJ_BROWSER_HEADERS, authorization: `Bearer ${access}` }
   }).pipe(
     Effect.flatMap((r) => r.text.pipe(Effect.orElseSucceed(() => ""), Effect.map((b) => ({ status: r.status, body: b })))),
     Effect.catch((cause) => Effect.succeed({ status: 0, body: String(cause) }))

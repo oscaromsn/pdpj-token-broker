@@ -1,5 +1,6 @@
 import { Effect } from "effect"
 import { FetchHttpClient, HttpClient, HttpClientRequest } from "effect/unstable/http"
+import { PDPJ_BROWSER_HEADERS } from "./pdpjHeaders.ts"
 
 /**
  * Diagnostics for a PDPJ access token captured by hand from a browser session.
@@ -57,7 +58,10 @@ const claims = (jwt: string): Record<string, unknown> | undefined => {
 const program = Effect.gen(function*() {
   const client = yield* HttpClient.HttpClient
   const authed = (req: HttpClientRequest.HttpClientRequest) =>
-    client.execute(HttpClientRequest.bearerToken(req, token)).pipe(
+    client.execute(
+      // The PDPJ gateway WAF rejects non-browser requests; see pdpjHeaders.ts.
+      HttpClientRequest.bearerToken(HttpClientRequest.setHeaders(req, PDPJ_BROWSER_HEADERS), token)
+    ).pipe(
       Effect.flatMap((r) =>
         r.text.pipe(Effect.orElseSucceed(() => ""), Effect.map((body) => ({ status: r.status, body })))
       ),
@@ -127,25 +131,29 @@ const program = Effect.gen(function*() {
   const one = yield* authed(
     HttpClientRequest.get(`${PROCESSOS}/${digits}`).pipe(HttpClientRequest.acceptJson)
   )
-  switch (one.status) {
-    case 200:
-      ok("PDPJ returned the process — this account HAS access")
-      process.stderr.write("\n")
-      process.stdout.write(one.body.slice(0, 4000) + "\n")
-      return true
-    case 403:
-      bad("valid token, but no standing in this case (403)")
-      hint("a sealed process is visible only to a party or counsel of record")
-      return false
-    case 404:
-      bad("no such process for this account (404)")
-      hint("expected for a sealed process when the account is not a party")
-      return false
-    default:
-      bad(`process query returned ${one.status}`)
-      hint(one.body.slice(0, 300))
-      return false
+  if (one.status === 200) {
+    ok("PDPJ returned the process — this account HAS access")
+    process.stderr.write("\n")
+    process.stdout.write(one.body.slice(0, 4000) + "\n")
+    return true
   }
+  // The access-control refusal is keyed off the message, not the status: PDPJ
+  // returns "Usuário ... não possui acesso" as a 401 for a single process (and
+  // as a 403 for a filtered list). Both mean the same thing — a valid token
+  // with no standing in this case — so the diagnosis follows the body.
+  if (/n[ãa]o possui acesso/i.test(one.body)) {
+    bad("valid token, but no standing in this case")
+    hint("a sealed process is visible only to a party or counsel of record")
+    hint(`PDPJ said: ${(JSON.parse(one.body) as { message?: string }).message ?? one.body.slice(0, 200)}`)
+    return false
+  }
+  if (one.status === 401) {
+    bad("PDPJ rejected the token (401) — stale, or the wrong Bearer was copied")
+    return false
+  }
+  bad(`process query returned ${one.status}`)
+  hint(one.body.slice(0, 300))
+  return false
 }).pipe(Effect.provide(FetchHttpClient.layer))
 
 Effect.runPromise(program)
